@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% block container %}
+    {% if task %}
+        <p>ID:{{ task.pk }} | {{ task.content }} | {{ task.created }}</p>
+    {% endif %}
+    {% if tasks %}
+        <h5 class="display-6 mt-5 mb-2">All Tasks</h5>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Content</th>
+                <th scope="col">Created</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for task in tasks %}
+                <tr>
+                    <th scope="row">{{ task.pk }}</th>
+                    <td>{{ task.content }}</td>
+                    <td>{{ task.created }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    {% endif %}
+
+    {% if today %}
+        <h5 class="display-6 mt-5 mb-2">Today's Tasks</h5>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Content</th>
+                <th scope="col">Created</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for task in today %}
+                <tr>
+                    <th scope="row">{{ task.pk }}</th>
+                    <td>{{ task.content }}</td>
+                    <td>{{ task.created }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
+</body>
+</html>

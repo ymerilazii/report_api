@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}
+        Report API
+    {% endblock %}</title>
+    <style>
+        #content {
+            flex-grow: 0;
+            flex-basis: 100px;
+        }
+    </style>
+</head>
+<body>
+{% block index %}active{% endblock %}
+{% block container %}
+
+    <h1 class="display-1 my-4">Report API</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <p{% if message.tags %} class="text-success"{% endif %}>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    <form action="{% url 'index' %}" method="post" class="mx-auto my-2 p-3"
+          style="border-radius: 10px; background-color: #e1e1e1">
+        <label for="content" class="form-label">Create Task</label>
+        <input type="text" name="content" id="content" placeholder="Content" class="form-control mx-auto my-2"
+               style="width: 200px">
+        <button class="btn btn-info" type="submit">Create Task</button>
+    </form>
+    <hr class="my-5">
+    <h5 class="display-6">Today's Tasks</h5>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Content</th>
+            <th scope="col">Created</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in today %}
+            <tr>
+                <th scope="row">{{ task.pk }}</th>
+                <td>{{ task.content|title }}</td>
+                <td>{{ task.created }}</td>
+                <td>
+                    <a class="text-reset text-decoration-none mx-2" data-bs-toggle="modal" data-bs-target="#editTask"
+                       data-bs-whatever="{{ task.pk }}" data-bs-content="{{ task.content }}" href="">
+                        <i class="bi bi-pencil-square text-success"></i>
+                    </a>
+                    <a class="text-reset text-decoration-none mx-2" href="{% url 'delete_task' task.pk %}">
+                        <i class="bi bi-trash-fill text-danger"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <hr class="my-5">
+    <h5 class="display-6">Generate Report:</h5>
+    <div style="width: 700px" class="mx-auto mb-5 p-2">
+        <form action="{% url 'report' %}" class="row g-3" method="get">
+            <div class="col-md-4">
+                <label for="day" class="form-label">Day</label>
+                <input type="number" class="form-control" id="day" name="day" value="{% now 'd' %}">
+            </div>
+            <div class="col-md-4">
+                <label for="month" class="form-label">Month</label>
+                <input type="number" class="form-control" id="month" name="month" value="{% now 'm' %}">
+            </div>
+            <div class="col-md-4">
+                <label for="year" class="form-label">Year</label>
+                <input type="number" class="form-control" id="year" name="year" value="{% now 'Y' %}">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-success">Generate Report</button>
+            </div>
+
+        </form>
+    </div>
+    <div class="modal fade" id="editTask" tabindex="-1" aria-labelledby="editTaskLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTaskLabel">New message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" class="text-center">
+                        <div class="mb-3">
+                            <label for="recipient-name" class="col-form-label">ID:</label>
+                            <input type="text" class="form-control mx-auto" disabled id="pk" style="width: 50px">
+                        </div>
+                        <div class="mb-3">
+                            <label for="content" class="col-form-label">Content:</label>
+                            <input type="text" class="form-control" id="content">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="edit">Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        let taskModal = document.getElementById('editTask')
+        taskModal.addEventListener('show.bs.modal', function (event) {
+            let button = event.relatedTarget
+            let pk = button.getAttribute('data-bs-whatever')
+            let content = button.getAttribute('data-bs-content')
+
+
+            let modalTitle = taskModal.querySelector('.modal-title')
+            let modalBodyInput = taskModal.querySelector('.modal-body #pk')
+            let modalContentInput = taskModal.querySelector('#content')
+            modalTitle.textContent = 'Edit Task: ' + content
+            modalBodyInput.value = pk
+            modalContentInput.value = content
+            $('#edit').click(function () {
+                let data = JSON.stringify({'content': modalContentInput.value});
+                console.log(data)
+                const csrftoken = Cookies.get('csrftoken');
+                let url = 'tasks/' + pk + '/update/';
+                let xhr = new XMLHttpRequest();
+                xhr.open('PATCH', url);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                xhr.send(data);
+                location.reload();
+            });
+        });
+
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+{% endblock %}
+</body>
+</html>
