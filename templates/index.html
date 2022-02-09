@@ -18,11 +18,14 @@
 {% block container %}
 
     <h1 class="display-1 my-4">Report API</h1>
-    {% if messages %}
-        {% for message in messages %}
-            <p{% if message.tags %} class="text-success"{% endif %}>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
+    <p class="text-success">
+        {% if messages %}
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        {% endif %}
+    </p>
+
     <form action="{% url 'index' %}" method="post" class="mx-auto my-2 p-3"
           style="border-radius: 10px; background-color: #e1e1e1">
         <label for="content" class="form-label">Create Task</label>
@@ -49,10 +52,12 @@
                 <td>{{ task.created }}</td>
                 <td>
                     <a class="text-reset text-decoration-none mx-2" data-bs-toggle="modal" data-bs-target="#editTask"
-                       data-bs-whatever="{{ task.pk }}" data-bs-content="{{ task.content }}" href="">
+                       data-bs-id="{{ task.pk }}" data-bs-content="{{ task.content }}" href="#">
                         <i class="bi bi-pencil-square text-success"></i>
                     </a>
-                    <a class="text-reset text-decoration-none mx-2" href="{% url 'delete_task' task.pk %}">
+                    <a class="text-reset text-decoration-none mx-2" href="#"
+                       data-bs-toggle="modal" data-bs-target="#deleteModal"
+                       data-bs-id="{{ task.pk }}" data-bs-content="{{ task.content }}">
                         <i class="bi bi-trash-fill text-danger"></i>
                     </a>
                 </td>
@@ -82,18 +87,23 @@
 
         </form>
     </div>
+    <!-- UPDATE MODAL -->
     <div class="modal fade" id="editTask" tabindex="-1" aria-labelledby="editTaskLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editTaskLabel">New message</h5>
+                    <h5 class="modal-title" id="editTaskLabel">Edit Task</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form method="post" class="text-center">
                         <div class="mb-3">
-                            <label for="recipient-name" class="col-form-label">ID:</label>
+                            <label for="pk" class="col-form-label">ID:</label>
                             <input type="text" class="form-control mx-auto" disabled id="pk" style="width: 50px">
+                        </div>
+                        <div class="mb-3">
+                            <label for="disabled-content" class="col-form-label">Previous Content:</label>
+                            <input type="text" class="form-control" disabled id="disabled-content">
                         </div>
                         <div class="mb-3">
                             <label for="content" class="col-form-label">Content:</label>
@@ -108,37 +118,83 @@
             </div>
         </div>
     </div>
+    <!-- DELETE MODAL -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header justify-content-center">
+                    <h5 class="modal-title text-center" id="deleteModalLabel" style="margin: 0 auto;position: absolute;">
+                        Delete Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete?</p>
+                    <p id="delete_content" class="font-monospace">DATA</p>
+                </div>
+                <div class="modal-footer mx-auto">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" id="delete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script type="text/javascript">
-        let taskModal = document.getElementById('editTask')
+        let base_url = 'http://127.0.0.1:8000/';
+        let taskModal = document.getElementById('editTask') //Edit Task Modal
         taskModal.addEventListener('show.bs.modal', function (event) {
             let button = event.relatedTarget
-            let pk = button.getAttribute('data-bs-whatever')
+            let pk = button.getAttribute('data-bs-id')
             let content = button.getAttribute('data-bs-content')
-
-
             let modalTitle = taskModal.querySelector('.modal-title')
             let modalBodyInput = taskModal.querySelector('.modal-body #pk')
             let modalContentInput = taskModal.querySelector('#content')
+            let modalDisabledInput = taskModal.querySelector('#disabled-content')
             modalTitle.textContent = 'Edit Task: ' + content
             modalBodyInput.value = pk
+            modalDisabledInput.value = content
             modalContentInput.value = content
-            $('#edit').click(function () {
+            $('#edit').click(function (e) {
+                e.preventDefault();
                 let data = JSON.stringify({'content': modalContentInput.value});
-                console.log(data)
-                const csrftoken = Cookies.get('csrftoken');
                 let url = 'tasks/' + pk + '/update/';
-                let xhr = new XMLHttpRequest();
-                xhr.open('PATCH', url);
-                xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                xhr.send(data);
-                location.reload();
+                //Added Ajax Function
+                $.ajax({
+                    type: 'PATCH',
+                    url: url,
+                    data: data,
+                    success: function () {
+                        location.reload();
+                    }
+                })
+            });
+        });
+        //Delete Task Modal
+        let deleteModal = document.getElementById('deleteModal')
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            let button = event.relatedTarget
+            let pk = button.getAttribute('data-bs-id')
+            console.log(pk)
+            let content = button.getAttribute('data-bs-content')
+            console.log(content)
+            let taskToDelete = document.getElementById('delete_content')
+            taskToDelete.innerHTML = content
+            $('#delete').click(function (e) {
+                e.preventDefault();
+                let url = base_url + 'tasks/' + pk + '/delete/';
+                //Added Ajax Function
+                $.ajax({
+                    type: 'DELETE',
+                    url: url,
+                    data: null,
+                    success: function () {
+                        location.reload();
+                    }
+                })
             });
         });
 
 
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
 {% endblock %}
 </body>
 </html>
